@@ -109,7 +109,9 @@ def restart_game():
     if tkmsg.askyesno('Restart the game', 'Are you sure to quit the game?'):
         menubar.delete(1)
         menubar.delete(1)
-        restart_table()
+        # Recreate the initial array in the same root window.
+        create_menubar()
+        create_grid()
 
 
 def diffuse_color(point):
@@ -268,20 +270,13 @@ def create_grid():
             name =  str(int(name) + 1)
 
 
-def restart_table():
-    """
-    Recreate the initial array in the same root window.
-    """
-    create_menubar()
-    create_grid()
-
-
 def init_table():
     """
     Create the initial array and the root window.
     """
     create_root()
-    restart_table()
+    create_menubar()
+    create_grid()
     
 
 # Display the game
