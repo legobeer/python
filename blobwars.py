@@ -25,10 +25,10 @@ sel_point = (-1, -1)
 turn = "red-1"
 
 # number of red squares
-number_red = 20
+number_red = 2
 
 # number of blue squares
-number_blue = 20
+number_blue = 2
 
 
 def valid_move(point_1, point_2):
@@ -53,7 +53,7 @@ def move_is_possible():
         for point1, button1 in button_dict.items():
             if button1.cget('bg') == color:
                 for point2, button2 in button_dict.items():
-                    if button2.cget('bg') == color and point1 != point2:
+                    if (button2.cget('bg') == color or button2.cget('bg') == 'yellow') and point1 != point2:
                         counter += valid_move(point1, point2)
         if counter == 0:
             if color == 'red':
@@ -253,14 +253,14 @@ def create_grid():
     parent = tk.Frame(root)
     parent.grid(row=0, column=0, sticky=tk.NSEW)
     name = '0'
-    color = 'red'
+    color = 'yellow'
     for row_index in range(10):
         tk.Grid.rowconfigure(parent, row_index, weight=1)
         for col_index in range(10):
             tk.Grid.columnconfigure(parent, col_index, weight=1)
-            if row_index < 2:
+            if ((row_index == 0) and (col_index== 0)) or ((row_index == 0) and (col_index== 9)):
                 color = 'red'
-            elif row_index > 7:
+            elif ((row_index == 9) and (col_index== 0)) or ((row_index == 9) and (col_index== 9)):
                 color = 'blue'
             else:
                 color = 'yellow'
