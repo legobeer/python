@@ -1,224 +1,289 @@
 #!/usr/bin/env python3  
 
-from tkinter import * 
-from tkinter.messagebox import *
+"""
+Programming the game blobwars with a graphical interface.
+The game is developed with a 10x10 grid
+"""
 
+from secrets import token_urlsafe
+import tkinter as tk
+import tkinter.messagebox as tkmsg
+
+# root window
+root = None
+
+# menubar
+menubar = None
+
+# stores the buttons forming the grid
 button_dict = {}
+
+# starting point of pawn duplication or move
 sel_point = (-1, -1)
-tour = "Red-1"
+
+# define which player should play
+turn = "red-1"
+
+# number of red squares
 number_red = 20
+
+# number of blue squares
 number_blue = 20
 
 
 def valid_move(point_1, point_2):
-    return ((abs(point_1[0] - point_2[0]) < 3) & (abs(point_1[1] - point_2[1]) < 3)) + ((abs(point_1[0] - point_2[0]) < 2) & (abs(point_1[1] - point_2[1]) < 2))
+    """
+    Return 0 if the move is not valid.
+    Return 1 if the move does not creat a new colored squared.
+    Return 2 if the move is a duplication.
+    """
+    return (((abs(point_1[0] - point_2[0]) < 3) & (abs(point_1[1] - point_2[1]) < 3))
+           + ((abs(point_1[0] - point_2[0]) < 2) & (abs(point_1[1] - point_2[1]) < 2)))
 
 
 def move_is_possible():
+    """
+    Return True if the player can play otherwise False.
+    """
     global button_dict
-    global tour
+    global turn
     counter = 0
-    if tour == 'Red-1':
+    color = turn[:-2]
+    if turn[-1] == '1':
         for point1, button1 in button_dict.items():
-            if button1.cget('bg') == 'red':
+            if button1.cget('bg') == color:
                 for point2, button2 in button_dict.items():
-                    if button2.cget('bg') == 'red' and point1 != point2:
+                    if button2.cget('bg') == color and point1 != point2:
                         counter += valid_move(point1, point2)
         if counter == 0:
-            tour = 'Blue-1'
-            move_not_possible()
-            return False
-    elif tour == 'Blue-1':
-        for point1, button1 in button_dict.items():
-            if button1.cget('bg') == 'blue':
-                for point2, button2 in button_dict.items():
-                    if button2.cget('bg') == 'blue' and point1 != point2:
-                        counter += valid_move(point1, point2)
-        if counter == 0:
-            tour = 'Red-1'
+            if color == 'red':
+                turn = 'blue-1'
+            else:
+                turn = 'red-1'
             move_not_possible()
             return False
     return True
 
-        
-
 
 def move_not_possible():
-    showinfo('', 'You cannot play!')
+    """
+    Displays on the screen that the player cannot play.
+    """
+    tkmsg.showinfo('', 'You cannot play!')
 
 
 def invalid_move():
-    showinfo('', 'Your move is not valid')
+    """
+    Displays on the screen that the move is not possible.    
+    """
+    tkmsg.showinfo('', 'Your move is not valid')
+
+
+def winner():
+    """
+    Shows on the screen who is the winner.
+    """
+    if number_red > number_blue:
+        tkmsg.showinfo('', 'red player won the game!')
+    elif number_red < number_blue:
+        tkmsg.showinfo('', 'blue player won the game!')
+    else:
+        tkmsg.showinfo('', 'Both players are tied')
+
+
+def quit_game():
+    """
+    This function is used when the user clicks quit on the menubar, it erased the window.
+    """
+    global root
+    if tkmsg.askyesno('Quit the game', 'Are you sure to quit the game?'):
+        root.quit()
         
 
+def restart_game():
+    """
+    This function is used when the user clicks restart on the menubar, it resets the array.
+    """
+    global root
+    global menubar
+    if tkmsg.askyesno('Restart the game', 'Are you sure to quit the game?'):
+        menubar.delete(1)
+        menubar.delete(1)
+        restart_table()
+
+
 def diffuse_color(point):
+    """
+    We look at the color of the neighbors of moore of a box as a
+    parameter to diffuse the color of this one to its neighbors of Moore.
+    """
     global number_red
     global number_blue
     global button_dict
     color = button_dict[point].cget('bg')
+    # Visit the neighbor of Moore
     for row_index in range(-1, 2):
         for col_index in range(-1, 2):
             x = point[0] + row_index
             y = point[1] + col_index
             if button_dict.get((x, y)):
-                if color == 'red':
-                    if 'red' != button_dict[x, y].cget('bg') != 'yellow':
-                        button_dict[x, y].config(bg='red')
-                        number_red += 1
-                        number_blue -= 1
-                else:
-                    if 'blue' != button_dict[x, y].cget('bg') != 'yellow':
-                        button_dict[x, y].config(bg='blue')
-                        number_red -= 1
-                        number_blue += 1
-
+                if color != button_dict[x, y].cget('bg') != 'yellow':
+                    button_dict[x, y].config(bg=color)
+                    number_red += (color == 'red') - (color == 'blue')
+                    number_blue += (color == 'blue') - (color == 'red')
 
 
 def modify_menu():
-    global tour
+    """
+    Update which player should play and if they should select
+    their first space or their second. Also refresh the score.
+    """
+    global turn
+    # delete the menu
     menubar.delete(2)
-    menu2 = Menu(menubar, tearoff=0)
-    if tour == "Red-1":
-        menubar.add_cascade(label="Red select the starting point",  foreground='red', menu=menu2)
-    if tour == "Red-2":
-        menubar.add_cascade(label="Red select the destination point", foreground='red', menu=menu2)
-    if tour == "Blue-1":
-        menubar.add_cascade(label="Blue select the starting point", foreground='blue', menu=menu2)
-    if tour == "Blue-2":
-        menubar.add_cascade(label="Blue select the destination point", foreground='blue', menu=menu2)
+    menu2 = tk.Menu(menubar, tearoff=0)
+    # refresh the score
+    menu2.add_command(label=f"red : {number_red}", foreground='red')
+    menu2.add_command(label=f"blue : {number_blue}", foreground='blue')
+    if turn[-1] == "1":
+        # update the menu
+        menubar.add_cascade(label="red select the starting point",  foreground=turn[:-2], menu=menu2)
+    elif turn[-1] == "2":
+        # update the menu
+        menubar.add_cascade(label="red select the destination point", foreground=turn[:-2], menu=menu2)
 
 
-root = Tk()
-root.title("Blobwars") 
+def update_turn_invalid():
+    """
+    Return the turn which was updated when the move is not valid.
+    """
+    global turn
+    if turn == "red-2":
+        turn = "red-1"
+    elif turn == "blue-2":
+        turn = "blue-1"
 
+
+def update_turn_valid():
+    """
+    Return the turn which was updated when the move is valid.
+    """
+    global turn
+    if turn == "red-2":
+        turn = "blue-1"
+    elif turn == "blue-2":
+        turn = "red-1"
 
 
 def play(point):
+    """
+    Manage the smooth running of the game.
+    """
     global number_red
     global number_blue
     global button_dict
-    global tour
+    global turn
     global sel_point
-    if (tour == "Red-1") & (button_dict[point].cget('bg') == 'red'):
-        if move_is_possible():
-            sel_point = point
-            tour = "Red-2"
-    elif (tour == "Red-2") & (button_dict[point].cget('bg') == 'yellow'):
+    color = turn[:-2]
+    if (turn[-1] == "1") & (button_dict[point].cget('bg') == turn[:-2]) & move_is_possible():
+        sel_point = point
+        turn = turn[:-1] + "2"
+    elif (turn[-1] == "2") & (button_dict[point].cget('bg') == 'yellow'):
         move_to_do = valid_move(point, sel_point)
         if move_to_do == 2:
-        # Verify if the move is valid
-            button_dict[point].config(bg='red')
-            number_red += 1
+            button_dict[point].config(bg=color)
+            number_red += (turn[:-2] == 'red')
+            number_blue += (turn[:-2] == 'blue')
+            update_turn_valid()
             diffuse_color(point)
-            tour = "Blue-1"
         elif move_to_do == 1:
-            button_dict[point].config(bg='red')
+            button_dict[point].config(bg=turn[:-2])
+            update_turn_valid()
             diffuse_color(point)
             button_dict[sel_point].config(bg='yellow')
-            tour = "Blue-1"
         else:
-            tour = "Red-1"
-            invalid_move()
-    if (tour == "Blue-1") & (button_dict[point].cget('bg') == 'blue'):
-        if move_is_possible():
-            sel_point = point
-            tour = "Blue-2"
-    elif (tour == "Blue-2") & (button_dict[point].cget('bg') == 'yellow'):
-        move_to_do = valid_move(point, sel_point)
-        if move_to_do == 2:
-        # Verify if the move is valid
-            button_dict[point].config(bg='blue')
-            number_blue += 1
-            diffuse_color(point)
-            tour = "Red-1"
-        elif move_to_do == 1:
-            button_dict[point].config(bg='blue')
-            diffuse_color(point)
-            button_dict[sel_point].config(bg='yellow')
-            tour = "Red-1"
-        else:
-            tour = "Blue-1"
+            update_turn_invalid()
             invalid_move()
     if number_red + number_blue == 100:
+        # All squares are occupied by players
         winner()
     modify_menu()
+    
 
-
-
-
-Grid.rowconfigure(root, 0, weight=1)
-Grid.columnconfigure(root, 0, weight=1)
-
-
-menubar = Menu(root)
-
-def p(): 
-    print('salut')
-
-#Create & Configure parent 
-parent = Frame(root)
-parent.grid(row=0, column=0, sticky=N+S+E+W)
-
-#Create a 10x10 (rows x columns) grid of buttons inside the parent
-
-def winner():
-    if number_red > number_blue:
-        showinfo('', 'Red player won the game!')
-    elif number_red < number_blue:
-        showinfo('', 'Blue player won the game!')
-    else:
-        showinfo('', 'Both players are tied')
-
-
-def invalid_move():
-    showinfo('', 'Your move is not valid!')
-
-def quit_game():
+def create_root():
+    """
+    Create the root window.
+    """
     global root
-    if askyesno('Quit the game', 'Are you sure to quit the game?'):
-        root.quit()
+    root = tk.Tk()
+    root.title("Blobwars") 
+    tk.Grid.rowconfigure(root, 0, weight=1)
+    tk.Grid.columnconfigure(root, 0, weight=1)
 
-def restart_game():
-    global root
-    if askyesno('Restart the game', 'Are you sure to quit the game?'):
-        menubar.delete(1)
-        menubar.delete(1)
-        init_table()
 
-def init_table():
-    menu1 = Menu(menubar, tearoff=0)
+def create_menubar():
+    """
+    Create the menubar.
+    """
+    global menubar
+    menubar = tk.Menu(root)
+
+    menu1 = tk.Menu(menubar, tearoff=0)
     menu1.add_command(label="Resume")
     menu1.add_command(label="Restart", command=restart_game)
     menu1.add_command(label="Quit", command=quit_game)
     menubar.add_cascade(label="Pause", menu=menu1)
 
-    menu2 = Menu(menubar, tearoff=0)
-    menubar.add_cascade(label="Red select the starting point", foreground='red', menu=menu2)
+    menu2 = tk.Menu(menubar, tearoff=0)
+    menu2.add_command(label=f"red : {number_red}", foreground='red')
+    menu2.add_command(label=f"blue : {number_blue}", foreground='blue')
 
+    menubar.add_cascade(label="red select the starting point", foreground='red', menu=menu2)
+    # add menubar to the root window
+    root.config(menu=menubar)
+
+
+def create_grid():
+    """
+    Create a 10x10 grid of buttons inside the parent.
+    """
+    # Create & Configure parent 
+    parent = tk.Frame(root)
+    parent.grid(row=0, column=0, sticky=tk.NSEW)
     name = '0'
     color = 'red'
     for row_index in range(10):
-        Grid.rowconfigure(parent, row_index, weight=1)
+        tk.Grid.rowconfigure(parent, row_index, weight=1)
         for col_index in range(10):
-            Grid.columnconfigure(parent, col_index, weight=1)
+            tk.Grid.columnconfigure(parent, col_index, weight=1)
             if row_index < 2:
                 color = 'red'
             elif row_index > 7:
                 color = 'blue'
             else:
                 color = 'yellow'
-            button_dict[(row_index, col_index)] = Button(parent, bg=color, text=name, command=lambda point=(row_index, col_index): play(point))
-            button_dict[(row_index, col_index)].grid(row=row_index, column=col_index, sticky=N+S+E+W)
+            # Add button to the dict
+            button_dict[(row_index, col_index)] = tk.Button(parent, bg=color, text=name, command=lambda point=(row_index, col_index): play(point))
+            button_dict[(row_index, col_index)].grid(row=row_index, column=col_index, sticky=tk.NSEW)
             name =  str(int(name) + 1)
+
+
+def restart_table():
+    """
+    Recreate the initial array in the same root window.
+    """
+    create_menubar()
+    create_grid()
+
+
+def init_table():
+    """
+    Create the initial array and the root window.
+    """
+    create_root()
+    restart_table()
     
 
-
-
-
-
-root.config(menu=menubar)
-
-
+# Display the game
 init_table()
-
 root.mainloop()
