@@ -52,7 +52,7 @@ def move_is_possible():
         for point1, button1 in button_dict.items():
             if button1.cget('bg') == color:
                 for point2, button2 in button_dict.items():
-                    if (button2.cget('bg') == color or button2.cget('bg') == 'yellow') and point1 != point2:
+                    if (button2.cget('bg') == 'yellow') and (point1 != point2):
                         counter += valid_move(point1, point2)
         if counter == 0:
             if color == 'red':
@@ -68,7 +68,10 @@ def move_not_possible():
     """
     Displays on the screen that the player cannot play.
     """
-    tkmsg.showinfo('', 'You cannot play!')
+    if turn[:-2] == "red":
+        tkmsg.showinfo('', 'Blue you cannot play!')
+    else:
+        tkmsg.showinfo('', 'Red you cannot play!')
 
 
 def invalid_move():
@@ -88,11 +91,11 @@ def winner():
     global menubar
     global turn
     if number_red > number_blue:
-        tkmsg.showinfo('', 'red player won the game!')
+        tkmsg.showinfo('', f'red player won the game!\nRED={number_red} BLUE={number_blue}')
     elif number_red < number_blue:
-        tkmsg.showinfo('', 'blue player won the game!')
+        tkmsg.showinfo('', f'blue player won the game!\nRED={number_red} BLUE={number_blue}')
     else:
-        tkmsg.showinfo('', 'Both players are tied')
+        tkmsg.showinfo('', f'Both players are tied\nRED={number_red} BLUE={number_blue}')
     menubar.delete(1)
     menubar.delete(1)
     # Recreate the initial array in the same root window.
@@ -229,7 +232,8 @@ def play(point):
     if (number_red + number_blue == 100) or (number_blue == 0) or (number_red == 0):
         # One player won
         winner()
-    else:
+    modify_menu()
+    if not move_is_possible():
         modify_menu()
     
 
