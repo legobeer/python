@@ -5,7 +5,6 @@ Programming the game blobwars with a graphical interface.
 The game is developed with a 10x10 grid
 """
 
-from secrets import token_urlsafe
 import tkinter as tk
 import tkinter.messagebox as tkmsg
 
@@ -81,14 +80,28 @@ def invalid_move():
 
 def winner():
     """
-    Shows on the screen who is the winner.
-    """
+    Shows on the screen who is the winner and refresh the game.
+    """    
+    global number_blue
+    global number_red
+    global root
+    global menubar
+    global turn
     if number_red > number_blue:
         tkmsg.showinfo('', 'red player won the game!')
     elif number_red < number_blue:
         tkmsg.showinfo('', 'blue player won the game!')
     else:
         tkmsg.showinfo('', 'Both players are tied')
+    menubar.delete(1)
+    menubar.delete(1)
+    # Recreate the initial array in the same root window.
+    number_red = 2
+    number_blue = 2
+    turn = "red-1"
+    create_menubar()
+    modify_menu()
+    create_grid()
 
 
 def quit_game():
@@ -104,13 +117,20 @@ def restart_game():
     """
     This function is used when the user clicks restart on the menubar, it resets the array.
     """
+    global number_blue
+    global number_red
     global root
     global menubar
+    global turn
     if tkmsg.askyesno('Restart the game', 'Are you sure to quit the game?'):
         menubar.delete(1)
         menubar.delete(1)
         # Recreate the initial array in the same root window.
+        number_red = 2
+        number_blue = 2
+        turn = "red-1"
         create_menubar()
+        modify_menu()
         create_grid()
 
 
@@ -149,10 +169,10 @@ def modify_menu():
     menu2.add_command(label=f"blue : {number_blue}", foreground='blue')
     if turn[-1] == "1":
         # update the menu
-        menubar.add_cascade(label="red select the starting point",  foreground=turn[:-2], menu=menu2)
+        menubar.add_cascade(label=f"{turn[:-2]} select the starting point",  foreground=turn[:-2], menu=menu2)
     elif turn[-1] == "2":
         # update the menu
-        menubar.add_cascade(label="red select the destination point", foreground=turn[:-2], menu=menu2)
+        menubar.add_cascade(label=f"{turn[:-2]} select the destination point", foreground=turn[:-2], menu=menu2)
 
 
 def update_turn_invalid():
@@ -206,10 +226,11 @@ def play(point):
         else:
             update_turn_invalid()
             invalid_move()
-    if number_red + number_blue == 100:
-        # All squares are occupied by players
+    if (number_red + number_blue == 100) or (number_blue == 0) or (number_red == 0):
+        # One player won
         winner()
-    modify_menu()
+    else:
+        modify_menu()
     
 
 def create_root():
@@ -219,6 +240,7 @@ def create_root():
     global root
     root = tk.Tk()
     root.title("Blobwars") 
+    root.minsize(450, 300)
     tk.Grid.rowconfigure(root, 0, weight=1)
     tk.Grid.columnconfigure(root, 0, weight=1)
 
@@ -265,7 +287,7 @@ def create_grid():
             else:
                 color = 'yellow'
             # Add button to the dict
-            button_dict[(row_index, col_index)] = tk.Button(parent, bg=color, text=name, command=lambda point=(row_index, col_index): play(point))
+            button_dict[(row_index, col_index)] = tk.Button(parent, bg=color, text=name, command=lambda point=(row_index, col_index): play(point), padx=20)
             button_dict[(row_index, col_index)].grid(row=row_index, column=col_index, sticky=tk.NSEW)
             name =  str(int(name) + 1)
 
